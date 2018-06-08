@@ -1,0 +1,13 @@
+body {
+  color: red;
+}
+
+svg {
+  border: 2px solid red;
+}
+
+circle {
+  &:hover {
+    fill: hsl(360, 100, 70);
+  }
+}
