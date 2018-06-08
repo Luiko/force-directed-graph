@@ -1,0 +1,7 @@
+node_modules
+dist
+flags
+src/**/_*.js
+src/**/_*.js
+src/assets
+dist
