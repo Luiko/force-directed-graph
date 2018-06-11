@@ -1,6 +1,9 @@
 import './index.scss';
 import countries from './countries';
 import * as d3 from 'd3';
+import 'normalize.css';
+import './assets/sprites/flags.css';
+import imgBlank from './assets/sprites/blank.gif';
 
 const { nodes: nodesData, links: linksData } = countries;
 
@@ -17,93 +20,122 @@ simulation.force('radial', d3.forceRadial(100, width / 2, height / 2));
 const standardRadialStrength = 0.09;
 simulation.force('radial').strength(standardRadialStrength);
 
-const links = d3.select('svg')
-  .append('g')
-  .attr('class', 'links')
-  .selectAll('line')
-  .data(linksData)
-  .enter()
-  .append('line')
-  .attr('stroke-width', 1)
-  .attr('stroke', 'yellow')
-;
+window.addEventListener('load', loaded);
 
-const nodes = d3.select('svg')
-  .append('g')
-  .attr('class', 'nodes')
-  .selectAll('circle')
-  .data(nodesData)
-  .enter()
-  .append('circle')
-  .attr('r', 4)
-  .attr('fill', 'green')
-  .call(d3
-    .drag()
-    .on('start', dragstarted)
-    .on('drag', dragged)
-    .on('end', dragended)
-  )
-;
-
-nodes.append('title').text(d => d.country);
-
-let originalPos;
-const pauseOnHover = function (node, key) {
-  if (!!originalPos && node.country === originalPos.id) {
-    node[key] = originalPos[key];
-  }
-  return node[key];
-};
-
-simulation.on('tick', function () {
-
-  links
-    .attr('x1', d => pauseOnHover(d.source, 'x'))
-    .attr('y1', d => pauseOnHover(d.source, 'y'))
-    .attr('x2', d => pauseOnHover(d.target, 'x'))
-    .attr('y2', d => pauseOnHover(d.target, 'y'))
+function loaded() {
+  const nodes = d3.select('svg')
+    .append('g')
+    .attr('class', 'nodes')
+    .selectAll('rect')
+    .data(nodesData)
+    .enter()
+    .append('rect')
+    .attr('width', 1)
+    .attr('height', 1)
+    .attr('fill', 'green')
   ;
 
-  nodes
-    .attr('cx', d => pauseOnHover(d, 'x'))
-    .attr('cy', d => pauseOnHover(d, 'y'))
+  const flagContainer = d3.select('.flag-container')
+    .selectAll('rect')
+    .data(nodesData)
+    .enter()
+    .append('rect')
+    .attr('href', imgBlank)
+    .attr('class', d => `flag flag-${d.code}`)
+    .attr('title', d => d.country)
+    .call(d3
+      .drag()
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended)
+    )
   ;
-})
-;
 
-let active = false;
+  const links = d3.select('svg')
+    .append('g')
+    .attr('class', 'links')
+    .selectAll('line')
+    .data(linksData)
+    .enter()
+    .append('line')
+    .attr('stroke-width', 1)
+    .attr('stroke', 'gray')
+  ;
 
-function dragstarted(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.7).restart();
-  d.fx = d.x;
-  d.fy = d.y;
-  active = true;
-  simulation.force('radial').strength(0.16);
-  setTimeout(() => {
-    simulation.force('radial').strength(standardRadialStrength);
-  }, 300);
-}
+  const svgElement = document.querySelector('svg');
+  let offsetX = svgElement.getBoundingClientRect().left + scrollX;
+  let offsetY = svgElement.getBoundingClientRect().top + scrollY;
 
-function dragged(d) {
-  d.fx = d3.event.x;
-  d.fy = d3.event.y;
-}
+  window.addEventListener('resize', function () {
+    offsetX = svgElement.getBoundingClientRect().left + scrollX;
+    offsetY = svgElement.getBoundingClientRect().top + scrollY;
+  });
 
-function dragended(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.1);
-  d.fx = null;
-  d.fy = null;
-  active = false;
-}
-
-nodes.on('mouseover', function (e) {
-  if (!active) {
-    if (!originalPos) {
-      originalPos = { x: e.x, y: e.y, id: e.country };
+  let originalPos;
+  const pauseOnHover = function (node, key) {
+    if (!!originalPos && node.country === originalPos.id) {
+      node[key] = originalPos[key];
     }
-  }
-});
+    return node[key];
+  };
 
-nodes.on('mouseleave', function () {
-  originalPos = null;
-});
+  simulation.on('tick', function () {
+    nodes
+      .attr('x', d => pauseOnHover(d, 'x'))
+      .attr('y', d => pauseOnHover(d, 'y'))
+    ;
+
+    flagContainer
+      .style(
+        'left',
+        d => (pauseOnHover(d, 'x') + offsetX - 8) + 'px'
+      )
+      .style(
+        'top',
+        d => (pauseOnHover(d, 'y') + offsetY - 8) + 'px'
+      )
+    ;
+
+    links
+      .attr('x1', d => pauseOnHover(d.source, 'x'))
+      .attr('y1', d => pauseOnHover(d.source, 'y'))
+      .attr('x2', d => pauseOnHover(d.target, 'x'))
+      .attr('y2', d => pauseOnHover(d.target, 'y'))
+    ;
+  })
+  ;
+
+  let active = false;
+
+  function dragstarted(d) {
+    if (!d3.event.active) simulation.alphaTarget(0.7).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+    active = true;
+    simulation.force('radial').strength(0.16);
+    setTimeout(() => {
+      simulation.force('radial').strength(standardRadialStrength);
+    }, 300);
+  }
+  function dragged(d) {
+    d.fx = d3.event.x;
+    d.fy = d3.event.y;
+  }
+  function dragended(d) {
+    if (!d3.event.active) simulation.alphaTarget(0.1);
+    d.fx = null;
+    d.fy = null;
+    active = false;
+  }
+
+  flagContainer.on('mouseover', function (e) {
+    if (!active) {
+      if (!originalPos) {
+        originalPos = { x: e.x, y: e.y, id: e.country };
+      }
+    }
+  });
+  flagContainer.on('mouseleave', function () {
+    originalPos = null;
+  });
+};

@@ -3,5 +3,5 @@ dist
 flags
 src/**/_*.js
 src/**/_*.js
-src/assets
+src/assets/more
 dist
