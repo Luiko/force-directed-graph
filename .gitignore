@@ -5,3 +5,4 @@ src/**/_*.js
 src/**/_*.js
 src/assets/more
 dist
+private
